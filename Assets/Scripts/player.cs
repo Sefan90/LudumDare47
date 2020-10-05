@@ -1,9 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class player : MonoBehaviour
 {
+    public GameObject text;
+    private int score = 0;
     private bool onGround = true;
     private int state = 0;
     /*
@@ -26,27 +29,49 @@ public class player : MonoBehaviour
     }
     void Update()
     {
-        float input = Input.GetAxisRaw("Horizontal")*speed; 
+        float input = Input.GetAxisRaw("Horizontal")*speed;
+        float newVelocityX = GetComponent<Rigidbody2D>().velocity.x;
+        float newVelocityY = GetComponent<Rigidbody2D>().velocity.y;
         if( state == 0)
         {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(input, GetComponent<Rigidbody2D>().velocity.y); 
+            newVelocityX = input;
         }
         else if(state == 1)
         {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, input);
+            newVelocityY = input;
         }
         else if(state == 2)
         {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, -input);
+            newVelocityY = -input;
         }
         else if(state == 3)
         {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(-input, GetComponent<Rigidbody2D>().velocity.y);
+            newVelocityX = -input;
         }
+
+        if(newVelocityY<-maxVelocity)
+        {
+            newVelocityY = -maxVelocity;
+        }
+        else if(newVelocityY>maxVelocity)
+        {
+            newVelocityY = maxVelocity;
+        }
+        
+        if(newVelocityX<-maxVelocity)
+        {
+            newVelocityX = -maxVelocity;
+        }
+        else if(newVelocityX>maxVelocity)
+        {
+            newVelocityX = maxVelocity;
+        }
+        
+        GetComponent<Rigidbody2D>().velocity = new Vector2(newVelocityX,newVelocityY);
 
         if(input != 0f)
         {
-            
+            text.transform.localScale = new Vector3(0f,0f,0f); //Removes starttext
             if(anim.GetCurrentAnimatorClipInfo(0)[0].clip.name != "running" && input > 0)
             {
                 anim.Play("Base Layer.running", 0, 1);
@@ -61,34 +86,17 @@ public class player : MonoBehaviour
             if(anim.GetCurrentAnimatorClipInfo(0)[0].clip.name != "landing" && onGround == false)
             {
                 //anim.Play("Base Layer.landing", 0, 1);
-                onGround = true;
+                //onGround = true;
             }
-            else if(anim.GetCurrentAnimatorClipInfo(0)[0].clip.name != "Idel" && anim.GetCurrentAnimatorClipInfo(0)[0].clip.name != "landing")
+            if(anim.GetCurrentAnimatorClipInfo(0)[0].clip.name != "Idel" && anim.GetCurrentAnimatorClipInfo(0)[0].clip.name != "landing")
             {
                 anim.Play("Base Layer.Idel", 0, 1);
             }
         }
-        else if(Physics2D.Raycast(transform.position, -Vector2.up).collider == null)
-        {
-            onGround = false;
-        }
-
-        if(GetComponent<Rigidbody2D>().velocity.y<-maxVelocity)
-        {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, -maxVelocity); 
-        }
-        else if(GetComponent<Rigidbody2D>().velocity.y>maxVelocity)
-        {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, maxVelocity); 
-        }
-        else if(GetComponent<Rigidbody2D>().velocity.x<-maxVelocity)
-        {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(-maxVelocity, GetComponent<Rigidbody2D>().velocity.y); 
-        }
-        else if(GetComponent<Rigidbody2D>().velocity.x>maxVelocity)
-        {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(maxVelocity, GetComponent<Rigidbody2D>().velocity.y); 
-        }
+        //else if(Physics2D.Raycast(transform.position, -Vector2.up).collider == null)
+        //{
+        //    onGround = false;
+        //}
 
         if(transform.rotation.eulerAngles.z != rotation)
         {
@@ -155,10 +163,26 @@ public class player : MonoBehaviour
             Physics2D.gravity = new Vector3(0,-9.81f,0);
             rotation = 0f;
         }
+        else if(col.gameObject.name == "Pickup")
+        {
+            col.gameObject.transform.localScale = new Vector3(0.5f,0.5f,0.5f);
+            col.gameObject.transform.position = new Vector3(Random.Range(-1f, 1f),Random.Range(-0.75f,-1.25f),0f);
+            score += 1;
+        }
         else if(col.gameObject.name == "Exit" && state == 3)
         {
-            //Win
-            gameObject.GetComponent<Renderer>().enabled = false;
+            text.GetComponent<TextMeshPro>().text = score+" orbs collected";
+            text.transform.localScale = new Vector3(1f,1f,1f);
+            text.transform.rotation = Quaternion.Euler(0,0,180f);
+            text.transform.position = new Vector3(0,1.5f,0);
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D col)
+    {
+        if(col.gameObject.name == "Exit" && state == 3)
+        {
+            text.transform.localScale = new Vector3(0f,0f,0f);
         }
     }
 }
